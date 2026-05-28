@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 import { logCreated } from "@/lib/activity-log";
 import { EXPENSE_CATEGORY_IDS } from "@/lib/finance-categories";
+import { autoPostExpense } from "@/domain/accounting-engine";
 
 const MAX_PROOF_DATA_URL_LENGTH = 4_500_000;
 const ALLOWED_PROOF_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
@@ -129,6 +130,23 @@ export async function POST(request: NextRequest) {
       amount: parseFloat(amount),
       billProofAttached: Boolean(proof.billProofDataUrl),
     });
+
+    // Auto-post to double-entry ledger (non-blocking: expense is saved even if ledger post fails)
+    try {
+      await autoPostExpense({
+        societyId: session!.societyId,
+        expenseId: expense.id,
+        amount: parsedAmount,
+        category,
+        tdsAmount: expense.tdsAmount ?? 0,
+        paidVia: body.paidVia ?? "bank",
+        description: title.trim(),
+        paidOn: expenseDate,
+        createdBy: session!.userId,
+      });
+    } catch {
+      // Ledger posting failed — expense is still saved, can be posted manually later
+    }
 
     return Response.json({ expense }, { status: 201 });
   } catch (error) {

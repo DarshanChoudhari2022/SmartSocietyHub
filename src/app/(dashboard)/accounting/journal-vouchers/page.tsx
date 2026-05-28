@@ -144,6 +144,31 @@ export default function JournalVouchersPage() {
                       ))}
                     </tbody>
                   </table>
+                  {jv.status === "POSTED" && (
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Void ${jv.voucherNumber}? This will post a reversing entry and cannot be undone.`)) return;
+                          try {
+                            const res = await fetch("/api/accounting/journal-vouchers", {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ voucherId: jv.id, action: "void" }),
+                            });
+                            if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+                            toast.success(`${jv.voucherNumber} voided`);
+                            refetch();
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : "Failed to void");
+                          }
+                        }}
+                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 transition"
+                      >
+                        <XCircle className="inline h-3.5 w-3.5 mr-1 -mt-0.5" />
+                        Void Voucher
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

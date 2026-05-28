@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { salaryCategoryForStaffRole } from "@/lib/finance-categories";
+import { autoPostSalaryPaid } from "@/domain/accounting-engine";
 
 function fiscalYearFor(date: Date) {
   const year = date.getFullYear();
@@ -71,6 +72,20 @@ export async function POST(
 
     return paid;
   });
+
+  // Auto-post to double-entry ledger
+  try {
+    await autoPostSalaryPaid({
+      societyId: session.societyId,
+      amount: salary.netPay,
+      staffName: salary.staffName,
+      month: salary.month,
+      paidOn,
+      createdBy: session.userId,
+    });
+  } catch {
+    // Ledger posting failed — salary payment is still recorded
+  }
 
   return Response.json(updated);
 }

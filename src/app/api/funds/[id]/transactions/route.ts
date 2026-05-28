@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { EXPENSE_CATEGORY_IDS, defaultExpenseCategoryForFund } from "@/lib/finance-categories";
+import { autoPostExpense } from "@/domain/accounting-engine";
 
 function fiscalYearFor(date: Date) {
   const year = date.getFullYear();
@@ -43,6 +44,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return Response.json({ error: "Insufficient fund balance" }, { status: 400 });
   }
 
+  const expenseCategory = type === "debit" ? (category || defaultExpenseCategoryForFund(fund.type)) : "";
+
   const transaction = await prisma.$transaction(async (tx) => {
     const fundTransaction = await tx.fundTransaction.create({
       data: {
@@ -62,7 +65,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
 
     if (type === "debit") {
-      const expenseCategory = category || defaultExpenseCategoryForFund(fund.type);
       if (!EXPENSE_CATEGORY_IDS.has(expenseCategory)) {
         throw new Error("Invalid expense category");
       }
@@ -93,6 +95,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     return fundTransaction;
   });
+
+  // Auto-post fund debit to ledger
+  if (type === "debit") {
+    try {
+      await autoPostExpense({
+        societyId: session!.societyId,
+        expenseId: transaction.id,
+        amount: amt,
+        category: expenseCategory,
+        paidVia: "bank",
+        description,
+        paidOn: new Date(),
+        createdBy: session!.userId,
+      });
+    } catch {
+      // Ledger posting failed — fund transaction is still saved
+    }
+  }
 
   return Response.json(transaction, { status: 201 });
 }

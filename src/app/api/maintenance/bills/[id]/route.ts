@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { generateSocietyReceiptNumber } from "@/lib/utils";
 import { logPayment, logUpdated } from "@/lib/activity-log";
 import { createNotification } from "@/lib/notifications";
+import { autoPostPaymentReceived } from "@/domain/accounting-engine";
 
 export async function PATCH(
   request: NextRequest,
@@ -126,6 +127,21 @@ export async function PATCH(
         link: "/maintenance",
       })
     ));
+
+    // Auto-post to double-entry ledger
+    try {
+      const bankCode = (body.paidVia || "cash") === "cash" ? "1000" : "1010";
+      await autoPostPaymentReceived({
+        societyId: session!.societyId,
+        amount: paidAmount,
+        description: `Maintenance - Flat ${bill.flat.flatNumber} - ${bill.period}`,
+        paidAt: body.paidAt ? new Date(body.paidAt) : new Date(),
+        bankCode,
+        createdBy: session!.userId,
+      });
+    } catch {
+      // Ledger posting failed — payment is still recorded, can be posted manually later
+    }
 
     return Response.json({ bill: updated });
   }

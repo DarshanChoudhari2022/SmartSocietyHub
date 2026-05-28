@@ -50,6 +50,9 @@ const QUICK_LINKS = [
   { href: "/accounting/bank-reconciliation", label: "Bank Reconciliation", icon: Landmark, desc: "Match bank vs books" },
   { href: "/accounting/tds", label: "TDS Management", icon: ShieldCheck, desc: "Form 26Q & challans" },
   { href: "/accounting/gst", label: "GST Summary", icon: Building2, desc: "Output tax vs input tax" },
+  { href: "/accounting/depreciation", label: "Depreciation", icon: RefreshCcw, desc: "Monthly WDV asset depreciation" },
+  { href: "/accounting/year-end-close", label: "Year-End Close", icon: Scale, desc: "Annual closing & surplus transfer" },
+  { href: "/accounting/opening-balance", label: "Opening Balances", icon: BookOpen, desc: "Enter starting balances for new society" },
 ];
 
 function KpiCard({
@@ -201,6 +204,35 @@ export default function AccountingPage() {
                 <p className="text-xs text-gray-500 truncate">{desc}</p>
               </div>
               <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" />
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Chairman's Quick-Start Guide */}
+      <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-800 mb-1">Chairman&apos;s Accounting Guide</h2>
+        <p className="text-xs text-gray-500 mb-4">Follow these steps every month to keep your society compliant</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { step: 1, title: "Set Up (One-Time)", desc: "Enter Opening Balances → Link Bank Accounts → Review Chart of Accounts", link: "/accounting/opening-balance" },
+            { step: 2, title: "Record Daily Transactions", desc: "Expenses, salary payments, and maintenance collections auto-post to ledger", link: "/accounting/journal-vouchers" },
+            { step: 3, title: "Monthly Reconciliation", desc: "Upload bank statement → Match transactions → Resolve differences", link: "/accounting/bank-reconciliation" },
+            { step: 4, title: "Run Monthly Depreciation", desc: "Click Run Depreciation to compute WDV for all society assets", link: "/accounting/depreciation" },
+            { step: 5, title: "File GST & TDS", desc: "Review GST summary → File returns → Record TDS challans quarterly", link: "/accounting/gst" },
+            { step: 6, title: "Check Trial Balance", desc: "Ensure debits = credits. If not, check for unposted transactions", link: "/accounting/trial-balance" },
+            { step: 7, title: "Generate Reports for AGM", desc: "Income & Expenditure + Balance Sheet → Share with auditor", link: "/accounting/income-expenditure" },
+            { step: 8, title: "Year-End Closing (Annual)", desc: "Complete checklist → Close FY → Transfer surplus to equity", link: "/accounting/year-end-close" },
+          ].map((s) => (
+            <Link key={s.step} href={s.link}
+              className="flex gap-3 rounded-xl border border-gray-100 bg-white p-3 hover:border-blue-200 hover:bg-blue-50/30 transition group">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700 text-sm font-bold group-hover:bg-blue-200">
+                {s.step}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800">{s.title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{s.desc}</p>
+              </div>
             </Link>
           ))}
         </div>

@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth";
-import { getTDSSummary } from "@/domain/accounting-engine";
+import { getTDSSummary, postJournalVoucher } from "@/domain/accounting-engine";
+import { tdsRemittanceEntries } from "@/domain/accounting";
 import { prisma } from "@/lib/prisma";
 
 const ALLOWED = ["chairman", "secretary", "treasurer"];
@@ -56,6 +57,22 @@ export async function POST(request: Request) {
       createdBy: session.userId,
     },
   });
+
+  // If challan is paid, post TDS remittance journal entry (Dr TDS Payable, Cr Bank)
+  if (paymentDate && Number(amount) > 0) {
+    try {
+      const lines = tdsRemittanceEntries(Number(amount));
+      await postJournalVoucher({
+        societyId: session.societyId,
+        createdBy: session.userId,
+        narration: `TDS remittance — ${quarter} — ${vendorName ?? ""}`.trim(),
+        voucherDate: new Date(paymentDate),
+        lines,
+      });
+    } catch {
+      // Ledger posting failed — challan is still saved
+    }
+  }
 
   return Response.json({ challan }, { status: 201 });
 }
