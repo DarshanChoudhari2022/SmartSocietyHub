@@ -1,0 +1,16 @@
+{
+  "name": "SmartSocietyHub",
+  "short_name": "SmartHub",
+  "description": "SmartSocietyHub - complete society management platform for billing, security, maintenance & community",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1419",
+  "theme_color": "#3B82F6",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en-IN"
+}
